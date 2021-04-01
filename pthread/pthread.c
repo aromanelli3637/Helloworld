@@ -42,7 +42,9 @@ void *printrandom(void *threadid)
 	rand = abs(buf % 100);
 		
 	usleep(rand*1000);
-	printf("Random num = %d -- threadID #%ld!\n",rand+input,tid);
+	printf("Random num = %d -- threadID #%ld!\n",rand,tid);
+	input += rand;
+	
 	pthread_exit(NULL);
 }
 
@@ -77,6 +79,8 @@ int main (void)
 	{
 		pthread_join(threads[t],&retval);
 	}
+
+	printf("The total sum is : %d\n", input);
 	
 	pthread_exit(NULL);
 }
