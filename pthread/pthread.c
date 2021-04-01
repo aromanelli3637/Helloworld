@@ -23,8 +23,6 @@ void *getinput(void *threadid)
 	/* signal and unlock input */
 	pthread_cond_broadcast(&cond_var);
 	pthread_mutex_unlock(&input_lock);
-
-	//printf(" unlocked in thread %ld\n", tid);
 	pthread_exit(NULL);
 }
 
