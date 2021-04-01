@@ -7,21 +7,24 @@
 
 #define NUMBER_OF_THREADS     20
 
+pthread_cond_t cond_var=PTHREAD_COND_INITIALIZER;
 pthread_mutex_t input_lock;
 int input;
 
-pthread_cond_t cond_var=PTHREAD_COND_INITIALIZER;
-
-void *getinput()
+void *getinput(void *threadid)
 {	
+	/* lock input*/
 	pthread_mutex_lock(&input_lock);
 
-	printf("\nPlease enter a number : \n");
+	/* get user input */
+	printf("Please enter a number : ");
 	scanf("%d",&input);
 
-	pthread_cond_signal(&cond_var);
-
+	/* signal and unlock input */
+	pthread_cond_broadcast(&cond_var);
 	pthread_mutex_unlock(&input_lock);
+
+	//printf(" unlocked in thread %ld\n", tid);
 	pthread_exit(NULL);
 }
 
@@ -29,9 +32,8 @@ void *printrandom(void *threadid)
 {
 	long tid;
 	tid = (long)threadid;
-	
+
 	/* wait for write thread */
-	pthread_mutex_lock(&input_lock);
 	pthread_cond_wait(&cond_var,&input_lock);
 	pthread_mutex_unlock(&input_lock);
 	
@@ -48,24 +50,22 @@ void *printrandom(void *threadid)
 
 int main (void)
 {
-	
 	pthread_t threads[NUMBER_OF_THREADS];
 	int return_code;
-	long t;
-	void *res;
 
-	for(t=0; t<NUMBER_OF_THREADS; t++)
+	for(long t=0; t<NUMBER_OF_THREADS; t++)
 	{	
-		if(t==0)
-		{
+		if(t==NUMBER_OF_THREADS-1) {
 			printf("In main: creating write thread %ld\n", t);
 			return_code = pthread_create(&threads[t], NULL, &getinput, (void *)t);
 		}
 		else
 		{
-			printf("In main: creating print threads %ld\n", t);
+			printf("In main: creating print thread %ld\n", t);
 			return_code = pthread_create(&threads[t], NULL, &printrandom, (void *)t);
 		}
+		
+		/* check error code */
 		if (return_code)
 		{
 			printf("ERROR; return code from pthread_create() is %d\n", return_code);
@@ -73,10 +73,13 @@ int main (void)
 		}
 	}
 	
-	for(t=0; t<NUMBER_OF_THREADS; t++)
+	/* wait for all threads by joining them */
+	void *retval;		
+	for(long t=0; t<NUMBER_OF_THREADS; t++)
 	{
-		pthread_join(t,&res);
+		pthread_join(threads[t],&retval);
 	}
+	
 	pthread_exit(NULL);
 }
 
